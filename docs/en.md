@@ -153,10 +153,11 @@ read after it starts again.
 - A website is missing: the user of the token needs the **View** access to it.
   The list is read again every 10 minutes, or with **Search** in the Discover
   tab.
-- The figures of the day move by steps: Matomo computes them when a report is
-  asked ("browser-triggered archiving"). If it is turned off on your server,
-  they follow the archiving cron job (hourly by default); the visitors right
-  now are always live.
+- The figures of the day move by steps: Matomo computes them again at most
+  every 15 minutes by default (**Administration → System → General settings →
+  Archive reports at most every X seconds**), or at each archiving cron job if
+  browser-triggered archiving is turned off. "Goal reached" follows them. The
+  visitors right now are always live.
 - **Goal conversions today** stays empty: the Goals plugin is disabled.
   **Visitors right now** stays empty: the Live plugin, or the visits log, is
   disabled.

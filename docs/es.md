@@ -161,10 +161,12 @@ intervalo se avisan en la primera lectura tras su reinicio.
 - Falta un sitio: el usuario del token necesita el acceso **Ver** a él. La
   lista se vuelve a leer cada 10 minutos, o con **Buscar** en la pestaña
   Descubrir.
-- Las cifras del día avanzan por escalones: Matomo las calcula cuando se pide
-  un informe («archivado activado por el navegador»). Si está desactivado en
-  su servidor, siguen la tarea cron de archivado (cada hora por defecto); los
-  visitantes ahora mismo siempre son en directo.
+- Las cifras del día avanzan por escalones: Matomo las recalcula como mucho
+  cada 15 minutos por defecto (**Administración → Sistema → Configuración
+  general → Archivar informes como máximo cada X segundos**), o en cada tarea
+  cron de archivado si el archivado por el navegador está desactivado.
+  «Objetivo alcanzado» las sigue. Los visitantes ahora mismo siempre son en
+  directo.
 - **Conversiones de objetivos hoy** se queda vacío: el plugin Goals está
   desactivado. **Visitantes ahora mismo** se queda vacío: el plugin Live, o el
   registro de visitas, está desactivado.

@@ -160,10 +160,12 @@ l'intervalle sont annoncés à la première lecture après son redémarrage.
 - Un site manque : l'utilisateur du jeton doit y avoir l'accès **Vue**. La
   liste est relue toutes les 10 minutes, ou avec **Rechercher** dans l'onglet
   Découverte.
-- Les chiffres du jour avancent par paliers : Matomo les calcule quand un
-  rapport est demandé (« archivage déclenché par le navigateur »). S'il est
-  désactivé sur votre serveur, ils suivent la tâche cron d'archivage (toutes
-  les heures par défaut) ; les visiteurs en ce moment sont toujours en direct.
+- Les chiffres du jour avancent par paliers : Matomo les recalcule au plus
+  toutes les 15 minutes par défaut (**Administration → Système → Paramètres
+  généraux → Archiver les rapports au maximum toutes les X secondes**), ou à
+  chaque tâche cron d'archivage si l'archivage par le navigateur est désactivé.
+  « Objectif atteint » les suit. Les visiteurs en ce moment sont toujours en
+  direct.
 - **Objectifs atteints aujourd'hui** reste vide : l'extension Goals est
   désactivée. **Visiteurs en ce moment** reste vide : l'extension Live, ou le
   journal des visites, est désactivé.

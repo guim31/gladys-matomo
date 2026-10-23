@@ -160,10 +160,12 @@ der Zwischenzeit beim ersten Lesen nach dem Neustart gemeldet.
 - Eine Website fehlt: Der Benutzer des Tokens braucht dort den Zugriff
   **Ansicht**. Die Liste wird alle 10 Minuten neu gelesen, oder mit **Suchen**
   im Tab „Entdecken“.
-- Die Tageszahlen bewegen sich in Stufen: Matomo berechnet sie, wenn ein
-  Bericht abgefragt wird („vom Browser ausgelöste Archivierung“). Ist sie auf
-  deinem Server abgeschaltet, folgen sie dem Archivierungs-Cronjob
-  (standardmäßig stündlich); die Besucher gerade jetzt sind immer live.
+- Die Tageszahlen bewegen sich in Stufen: Matomo berechnet sie standardmäßig
+  höchstens alle 15 Minuten neu (**Administration → System → Allgemeine
+  Einstellungen → Berichte höchstens alle X Sekunden archivieren**), oder bei
+  jedem Archivierungs-Cronjob, wenn die Archivierung durch den Browser
+  abgeschaltet ist. „Ziel erreicht“ folgt ihnen. Die Besucher gerade jetzt sind
+  immer live.
 - **Zielkonversionen heute** bleibt leer: Das Plugin Goals ist deaktiviert.
   **Besucher gerade jetzt** bleibt leer: Das Plugin Live oder das
   Besuchsprotokoll ist deaktiviert.

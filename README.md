@@ -56,8 +56,8 @@ restart announces nothing twice.
 - Read-only, one Matomo server per configuration, 200 websites at most.
 - The spike and silence thresholds are the same for every website; "Goal
   reached" counts all the goals of a website together.
-- The figures of the day follow the archiving of Matomo (instant with the
-  default browser-triggered archiving, hourly with a cron job only).
+- The figures of the day (and "Goal reached") follow the archiving of Matomo:
+  every 15 minutes at most by default, or at each archiving cron job.
 - Matomo 3 and older are not supported. A self-signed HTTPS certificate is not
   accepted (use `http://` on the local network).
 

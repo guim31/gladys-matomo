@@ -260,8 +260,13 @@ visitsConverted }]`), `VisitsSummary.get` / `Actions.get` / `Goals.get` en `peri
 - **« Aujourd'hui » = jour du site dans son fuseau Matomo** (`timezone` : nom IANA, `UTC` ou
   `UTC+5.5`), pas le `TZ` de Gladys : `dayIn()` dans `src/hub.js` pour les déclencheurs « premier
   visiteur » et « objectif atteint ».
-- Les chiffres du jour dépendent de l'**archivage** : instantanés avec l'archivage déclenché par le
-  navigateur (défaut), horaires si seul le cron archive. `Live.getCounters` est toujours en direct.
+- Les chiffres du jour dépendent de l'**archivage** : le rapport du jour n'est recalculé qu'après
+  `time_before_today_archive_considered_outdated` (**900 s** par défaut, « Archiver les rapports au
+  maximum toutes les X secondes ») avec l'archivage par le navigateur, ou au cron sinon : « objectif
+  atteint » peut donc tarder 15 min. `Live.getCounters` est toujours en direct. Pour tester :
+  `console config:set --section=General --key=time_before_today_archive_considered_outdated --value=5`.
+- Le tracker ignore les **robots** : une visite envoyée par `fetch` de Node sans paramètre `ua=` d'un
+  navigateur répond 204 mais n'est pas comptée (piège de test).
 - **Déclencheurs** : pic = `active ≥ seuil` (30 min) sur front montant, réarmé sous le seuil, 30 min au
   moins entre deux ; premier visiteur = visiteurs uniques du jour > 0 et jour différent du dernier
   annoncé ; objectif atteint = `nb_conversions` du jour en hausse (depuis 0 sur un nouveau jour) ;
@@ -276,3 +281,21 @@ visitsConverted }]`), `VisitsSummary.get` / `Actions.get` / `Goals.get` en `peri
   (`action=databaseSetup`, `tablesCreation`, `setupSuperUser`, `firstWebsiteSetup`, `finished`),
   puis `UsersManager.createAppSpecificTokenAuth` (login + `passwordConfirmation`) pour un jeton ; les
   visites se rejouent par `matomo.php?…&cip=…&token_auth=…`.
+
+## Vérifié sur un vrai Matomo
+
+Le 23/10/2026, image Docker de l'intégration lancée avec les contraintes du bac à sable de Gladys
+(`--cap-drop ALL --security-opt no-new-privileges --read-only --memory 256m --pids-limit 256`, volume
+`/data`, réseau en pont, `TZ=Europe/Paris`) contre `matomo:5` (**5.14.2**) + `mariadb:11`, visites et
+objectifs envoyés à `matomo.php`.
+
+- **Sans Gladys** : reconnexion du SDK en backoff, pas de plantage, aucun secret dans les logs,
+  ~18 Mo au repos, arrêt propre sur SIGTERM (code 0).
+- **Intégration complète** (faux Gladys du SDK, noms en français) : découverte des deux sites, états,
+  badge `local`, widget validé, « Lire les chiffres d'un site », « Tester la connexion » (version
+  5.14.2). Déclencheurs réels : pic de visiteurs (seuil 4), premier visiteur de la journée, objectif
+  atteint ; rien de plus après redémarrage sur le même `/data`. Jeton faux (Matomo 5.14 répond alors
+  **HTTP 401**), hôte inconnu, mauvais chemin, jeton absent : messages justes. Jeton d'un utilisateur
+  en lecture : seul son site est listé, l'autre répond « You can't access… ».
+- Non vérifié : Matomo Cloud et Matomo 4 (pas d'instance), le déclencheur « aucune visite » en temps
+  réel (couvert par les tests), une instance Gladys réelle (rendu du widget, éditeur de scènes).
