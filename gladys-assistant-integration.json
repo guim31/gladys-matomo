@@ -1,177 +1,684 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Matomo",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Visitors right now, today's visits and goal conversions of your Matomo websites in Gladys.",
+    "fr": "Visiteurs en ce moment, visites et objectifs du jour de vos sites Matomo dans Gladys.",
+    "de": "Besucher gerade jetzt, Besuche und Zielkonversionen des Tages deiner Matomo-Websites in Gladys.",
+    "es": "Visitantes ahora, visitas y conversiones del día de sus sitios Matomo en Gladys."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-matomo:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-matomo/main/cover.png",
+  "categories": ["services"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Matomo",
+        "fr": "Votre Matomo",
+        "de": "Dein Matomo",
+        "es": "Su Matomo"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "The address of your Matomo (self-hosted or Matomo Cloud) and an authentication token of a user with view access (Personal → Security → Auth tokens). Then add the websites from the Discover tab.",
+        "fr": "L'adresse de votre Matomo (auto-hébergé ou Matomo Cloud) et un jeton d'authentification d'un utilisateur en lecture (Personnel → Sécurité → Jetons d'authentification). Ajoutez ensuite les sites depuis l'onglet Découverte.",
+        "de": "Die Adresse deines Matomo (selbst gehostet oder Matomo Cloud) und ein Authentifizierungs-Token eines Benutzers mit Lesezugriff (Persönlich → Sicherheit → Authentifizierungs-Tokens). Lege dann die Websites im Tab „Entdecken“ an.",
+        "es": "La dirección de su Matomo (autoalojado o Matomo Cloud) y un token de autenticación de un usuario con acceso de lectura (Personal → Seguridad → Tokens de autenticación). Después añada los sitios desde la pestaña Descubrir."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-matomo/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://matomo.org/faq/general/faq_114/",
+          "label": {
+            "en": "Create a token",
+            "fr": "Créer un jeton",
+            "de": "Token erstellen",
+            "es": "Crear un token"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Matomo address",
+        "fr": "Adresse de Matomo",
+        "de": "Matomo-Adresse",
+        "es": "Dirección de Matomo"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The address you open Matomo with, e.g. https://stats.example.org or https://example.matomo.cloud.",
+        "fr": "L'adresse avec laquelle vous ouvrez Matomo, ex. https://stats.example.org ou https://example.matomo.cloud.",
+        "de": "Die Adresse, mit der du Matomo öffnest, z. B. https://stats.example.org oder https://example.matomo.cloud.",
+        "es": "La dirección con la que abre Matomo, p. ej. https://stats.example.org o https://example.matomo.cloud."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.10:8080",
+        "fr": "ex. http://192.168.1.10:8080",
+        "de": "z. B. http://192.168.1.10:8080",
+        "es": "p. ej. http://192.168.1.10:8080"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "token",
+      "type": "secret",
+      "label": {
+        "en": "Authentication token",
+        "fr": "Jeton d'authentification",
+        "de": "Authentifizierungs-Token",
+        "es": "Token de autenticación"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "token_auth of a user with view access only: 32 characters.",
+        "fr": "token_auth d'un utilisateur en lecture seule : 32 caractères.",
+        "de": "token_auth eines Benutzers nur mit Lesezugriff: 32 Zeichen.",
+        "es": "token_auth de un usuario solo con acceso de lectura: 32 caracteres."
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Matomo is read: one API request for up to 20 websites each time.",
+        "fr": "À quelle fréquence Matomo est lu : une requête d'API pour 20 sites au plus à chaque fois.",
+        "de": "Wie oft Matomo gelesen wird: jedes Mal eine API-Anfrage für bis zu 20 Websites.",
+        "es": "Con qué frecuencia se lee Matomo: una petición de API para hasta 20 sitios cada vez."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
+      "key": "spike_threshold",
       "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "label": {
+        "en": "Visitor spike from",
+        "fr": "Pic de visiteurs à partir de",
+        "de": "Besucheransturm ab",
+        "es": "Pico de visitantes a partir de"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Visitors at the same time (last 30 minutes) that fire the scene trigger \"Visitor spike\".",
+        "fr": "Visiteurs simultanés (30 dernières minutes) qui déclenchent le déclencheur de scène « Pic de visiteurs ».",
+        "de": "Gleichzeitige Besucher (letzte 30 Minuten), die den Szenen-Auslöser „Besucheransturm“ auslösen.",
+        "es": "Visitantes simultáneos (últimos 30 minutos) que activan el disparador de escena «Pico de visitantes»."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": 10,
+      "min": 1,
+      "max": 1000000
+    },
+    {
+      "key": "silence_hours",
+      "type": "number",
+      "label": {
+        "en": "No visit for (hours)",
+        "fr": "Aucune visite depuis (heures)",
+        "de": "Kein Besuch seit (Stunden)",
+        "es": "Sin visitas desde hace (horas)"
+      },
+      "description": {
+        "en": "Hours without any visit that fire the scene trigger \"No visit for a while\".",
+        "fr": "Heures sans aucune visite qui déclenchent le déclencheur de scène « Aucune visite depuis un moment ».",
+        "de": "Stunden ohne Besuch, die den Szenen-Auslöser „Länger kein Besuch“ auslösen.",
+        "es": "Horas sin ninguna visita que activan el disparador de escena «Sin visitas desde hace un tiempo»."
+      },
+      "required": false,
+      "default": 24,
+      "min": 1,
+      "max": 720
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
+      "description": {
+        "en": "Language of the feature names (set when a device is added) and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout d'un appareil) et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Anlegen eines Geräts festgelegt) und der Szenen-Ergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir un dispositivo) y de los resultados de escena."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "visitor_spike",
+      "label": {
+        "en": "Visitor spike",
+        "fr": "Pic de visiteurs",
+        "de": "Besucheransturm",
+        "es": "Pico de visitantes"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "The visitors right now (last 30 minutes) of a website reach the threshold set in the configuration (once per spike, 30 minutes apart at least).",
+        "fr": "Les visiteurs en ce moment (30 dernières minutes) d'un site atteignent le seuil réglé dans la configuration (une fois par pic, 30 minutes d'écart au moins).",
+        "de": "Die Besucher gerade jetzt (letzte 30 Minuten) einer Website erreichen die in der Konfiguration gesetzte Schwelle (einmal pro Ansturm, mindestens 30 Minuten Abstand).",
+        "es": "Los visitantes actuales (últimos 30 minutos) de un sitio alcanzan el umbral fijado en la configuración (una vez por pico, con 30 minutos de separación como mínimo)."
       },
       "fields": [
         {
           "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "source": "devices",
+          "label": {
+            "en": "Websites (empty: any)",
+            "fr": "Sites (vide : tous)",
+            "de": "Websites (leer: alle)",
+            "es": "Sitios (vacío: todos)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "website",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Website name",
+            "fr": "Nom du site",
+            "de": "Name der Website",
+            "es": "Nombre del sitio"
+          }
+        },
+        {
+          "key": "domain",
+          "type": "string",
+          "label": {
+            "en": "Domain",
+            "fr": "Domaine",
+            "de": "Domain",
+            "es": "Dominio"
+          }
+        },
+        {
+          "key": "visitors",
+          "type": "number",
+          "label": {
+            "en": "Visitors right now",
+            "fr": "Visiteurs en ce moment",
+            "de": "Besucher gerade jetzt",
+            "es": "Visitantes ahora mismo"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwelle",
+            "es": "Umbral"
+          }
+        }
+      ]
+    },
+    {
+      "key": "first_visitor",
+      "label": {
+        "en": "First visitor of the day",
+        "fr": "Premier visiteur de la journée",
+        "de": "Erster Besucher des Tages",
+        "es": "Primer visitante del día"
+      },
+      "description": {
+        "en": "A website receives its first visitor of the day (the day of the website in Matomo, from midnight).",
+        "fr": "Un site reçoit son premier visiteur de la journée (le jour du site dans Matomo, depuis minuit).",
+        "de": "Eine Website empfängt ihren ersten Besucher des Tages (der Tag der Website in Matomo, ab Mitternacht).",
+        "es": "Un sitio recibe su primer visitante del día (el día del sitio en Matomo, desde la medianoche)."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Websites (empty: any)",
+            "fr": "Sites (vide : tous)",
+            "de": "Websites (leer: alle)",
+            "es": "Sitios (vacío: todos)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "website",
+          "type": "string",
+          "label": {
+            "en": "Website name",
+            "fr": "Nom du site",
+            "de": "Name der Website",
+            "es": "Nombre del sitio"
+          }
+        },
+        {
+          "key": "domain",
+          "type": "string",
+          "label": {
+            "en": "Domain",
+            "fr": "Domaine",
+            "de": "Domain",
+            "es": "Dominio"
+          }
+        },
+        {
+          "key": "visitors",
+          "type": "number",
+          "label": {
+            "en": "Unique visitors today",
+            "fr": "Visiteurs uniques aujourd'hui",
+            "de": "Eindeutige Besucher heute",
+            "es": "Visitantes únicos hoy"
+          }
+        }
+      ]
+    },
+    {
+      "key": "goal_converted",
+      "label": {
+        "en": "Goal reached",
+        "fr": "Objectif atteint",
+        "de": "Ziel erreicht",
+        "es": "Objetivo alcanzado"
+      },
+      "description": {
+        "en": "A website records new goal conversions today (read at every refresh; the figures of the day follow the archiving of Matomo).",
+        "fr": "Un site enregistre de nouvelles conversions d'objectifs aujourd'hui (lu à chaque rafraîchissement ; les chiffres du jour suivent l'archivage de Matomo).",
+        "de": "Eine Website verzeichnet heute neue Zielkonversionen (bei jeder Aktualisierung gelesen; die Tageszahlen folgen der Archivierung von Matomo).",
+        "es": "Un sitio registra nuevas conversiones de objetivos hoy (leído en cada actualización; las cifras del día siguen el archivado de Matomo)."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Websites (empty: any)",
+            "fr": "Sites (vide : tous)",
+            "de": "Websites (leer: alle)",
+            "es": "Sitios (vacío: todos)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "website",
+          "type": "string",
+          "label": {
+            "en": "Website name",
+            "fr": "Nom du site",
+            "de": "Name der Website",
+            "es": "Nombre del sitio"
+          }
+        },
+        {
+          "key": "domain",
+          "type": "string",
+          "label": {
+            "en": "Domain",
+            "fr": "Domaine",
+            "de": "Domain",
+            "es": "Dominio"
+          }
+        },
+        {
+          "key": "conversions",
+          "type": "number",
+          "label": {
+            "en": "New conversions",
+            "fr": "Nouvelles conversions",
+            "de": "Neue Konversionen",
+            "es": "Nuevas conversiones"
+          }
+        },
+        {
+          "key": "total",
+          "type": "number",
+          "label": {
+            "en": "Conversions today",
+            "fr": "Conversions aujourd'hui",
+            "de": "Konversionen heute",
+            "es": "Conversiones hoy"
+          }
+        }
+      ]
+    },
+    {
+      "key": "website_silent",
+      "label": {
+        "en": "No visit for a while",
+        "fr": "Aucune visite depuis un moment",
+        "de": "Länger kein Besuch",
+        "es": "Sin visitas desde hace un tiempo"
+      },
+      "description": {
+        "en": "A website that had visits receives none for the hours set in the configuration: the tracking code may be broken.",
+        "fr": "Un site qui avait des visites n'en reçoit plus pendant les heures réglées dans la configuration : le code de suivi est peut-être cassé.",
+        "de": "Eine Website mit Besuchen erhält für die in der Konfiguration gesetzten Stunden keine mehr: Vielleicht ist der Tracking-Code kaputt.",
+        "es": "Un sitio que tenía visitas no recibe ninguna durante las horas fijadas en la configuración: quizá el código de seguimiento falla."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Websites (empty: any)",
+            "fr": "Sites (vide : tous)",
+            "de": "Websites (leer: alle)",
+            "es": "Sitios (vacío: todos)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "website",
+          "type": "string",
+          "label": {
+            "en": "Website name",
+            "fr": "Nom du site",
+            "de": "Name der Website",
+            "es": "Nombre del sitio"
+          }
+        },
+        {
+          "key": "domain",
+          "type": "string",
+          "label": {
+            "en": "Domain",
+            "fr": "Domaine",
+            "de": "Domain",
+            "es": "Dominio"
+          }
+        },
+        {
+          "key": "hours",
+          "type": "number",
+          "label": {
+            "en": "Hours without a visit",
+            "fr": "Heures sans visite",
+            "de": "Stunden ohne Besuch",
+            "es": "Horas sin visitas"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_website_stats",
+      "label": {
+        "en": "Read the figures of a website",
+        "fr": "Lire les chiffres d'un site",
+        "de": "Zahlen einer Website lesen",
+        "es": "Leer las cifras de un sitio"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Reads the figures of today and of right now for the next actions, and a ready-made sentence.",
+        "fr": "Lit les chiffres du jour et du moment pour les actions suivantes, et une phrase toute prête.",
+        "de": "Liest die Zahlen von heute und von gerade jetzt für die nächsten Aktionen, und einen fertigen Satz.",
+        "es": "Lee las cifras de hoy y del momento para las siguientes acciones, y una frase lista."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Website",
+            "fr": "Site",
+            "de": "Website",
+            "es": "Sitio"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Website name",
+            "fr": "Nom du site",
+            "de": "Name der Website",
+            "es": "Nombre del sitio"
+          }
+        },
+        {
+          "key": "active",
+          "type": "number",
+          "label": {
+            "en": "Visitors right now",
+            "fr": "Visiteurs en ce moment",
+            "de": "Besucher gerade jetzt",
+            "es": "Visitantes ahora mismo"
+          }
+        },
+        {
+          "key": "visitors",
+          "type": "number",
+          "label": {
+            "en": "Unique visitors today",
+            "fr": "Visiteurs uniques aujourd'hui",
+            "de": "Eindeutige Besucher heute",
+            "es": "Visitantes únicos hoy"
+          }
+        },
+        {
+          "key": "visits",
+          "type": "number",
+          "label": {
+            "en": "Visits today",
+            "fr": "Visites aujourd'hui",
+            "de": "Besuche heute",
+            "es": "Visitas hoy"
+          }
+        },
+        {
+          "key": "pageviews",
+          "type": "number",
+          "label": {
+            "en": "Page views today",
+            "fr": "Pages vues aujourd'hui",
+            "de": "Seitenaufrufe heute",
+            "es": "Páginas vistas hoy"
+          }
+        },
+        {
+          "key": "conversions",
+          "type": "number",
+          "label": {
+            "en": "Goal conversions today",
+            "fr": "Objectifs atteints aujourd'hui",
+            "de": "Zielkonversionen heute",
+            "es": "Conversiones de objetivos hoy"
+          }
+        },
+        {
+          "key": "bounce_rate",
+          "type": "number",
+          "label": {
+            "en": "Bounce rate today (%)",
+            "fr": "Taux de rebond aujourd'hui (%)",
+            "de": "Absprungrate heute (%)",
+            "es": "Tasa de rebote hoy (%)"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "matomo_today",
+      "label": {
+        "en": "Matomo today",
+        "fr": "Matomo aujourd'hui",
+        "de": "Matomo heute",
+        "es": "Matomo hoy"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Visitors right now, unique visitors, visits, page views and goals today, per website.",
+        "fr": "Visiteurs en ce moment, visiteurs uniques, visites, pages vues et objectifs du jour, par site.",
+        "de": "Besucher gerade jetzt, eindeutige Besucher, Besuche, Seitenaufrufe und Ziele heute, pro Website.",
+        "es": "Visitantes ahora, visitantes únicos, visitas, páginas vistas y objetivos de hoy, por sitio."
+      },
+      "icon": "bar-chart-2",
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "websites",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Websites (empty: all)",
+            "fr": "Sites (vide : tous)",
+            "de": "Websites (leer: alle)",
+            "es": "Sitios (vacío: todos)"
+          },
+          "description": {
+            "en": "Empty: every website. Only the devices added to Gladys can be chosen.",
+            "fr": "Vide : tous les sites. Seuls les appareils ajoutés à Gladys peuvent être choisis.",
+            "de": "Leer: alle Websites. Nur die in Gladys angelegten Geräte sind wählbar.",
+            "es": "Vacío: todos los sitios. Solo se pueden elegir los dispositivos añadidos a Gladys."
+          },
+          "required": false
+        }
+      ]
     }
   ]
 }

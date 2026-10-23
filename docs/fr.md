@@ -1,67 +1,186 @@
-# Template de démonstration
+# Matomo
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+[Matomo](https://matomo.org/) est la plateforme libre (GPL-3.0) de mesure
+d'audience web, auto-hébergée ou sur Matomo Cloud. Cette intégration amène les
+chiffres de vos sites Matomo dans Gladys : chaque site devient un appareil avec
+ses visiteurs en ce moment et ses visiteurs uniques, visites, pages vues,
+objectifs atteints et taux de rebond du jour. Des scènes peuvent réagir à un
+pic de visiteurs, au premier visiteur de la journée, à un objectif atteint, ou
+à un site qui ne reçoit plus de visites (un code de suivi cassé) ; un widget
+de tableau de bord montre la journée d'un coup d'œil, et une action de scène
+met les chiffres d'un site dans un message.
 
-## Ce que vous obtenez
+Testée sur un vrai Matomo 5.14.2 auto-hébergé (Docker, MariaDB) ; pas encore
+sur Matomo Cloud : vos retours sont les bienvenus dans
+[les issues](https://github.com/guim31/gladys-matomo/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Ce qu'il vous faut
 
-## Configuration
+- Gladys Assistant 5.1.0 ou plus récent.
+- Un Matomo 4 ou 5, auto-hébergé ou sur [Matomo Cloud](https://matomo.org/),
+  joignable depuis la machine de Gladys.
+- Un **jeton d'authentification** (`token_auth`) d'un utilisateur Matomo qui a
+  l'accès **en lecture** (« Vue ») aux sites. Un utilisateur dédié en lecture
+  seule est préférable : le jeton donne les droits de son utilisateur.
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+À chaque rafraîchissement, l'intégration envoie **une** requête à l'API de
+Matomo pour 20 sites au plus (une requête groupée : visiteurs des 30 dernières
+minutes, visites, pages vues et objectifs du jour), plus la liste des sites
+toutes les 10 minutes. Le jeton part toujours dans le corps d'une requête POST,
+jamais dans une adresse. Gladys accepte 300 états par minute : avec
+l'intervalle de 30 secondes, ajoutez 25 sites au plus à Gladys.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Mise en route
 
-## Actions
+### 1. Créer un jeton
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Dans Matomo, en super utilisateur, créez un utilisateur avec l'accès **Vue**
+sur les sites à suivre (**Administration → Système → Utilisateurs**), ou
+utilisez votre propre compte. Connecté avec cet utilisateur, ouvrez
+**Personnel → Sécurité → Jetons d'authentification**, cliquez sur **Créer un
+nouveau jeton**, et copiez le jeton (32 caractères, affiché une seule fois).
 
-## Scènes
+### 2. Configurer l'intégration
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Dans Gladys, ouvrez **Intégrations → Matomo → Configuration** :
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+- **Adresse de Matomo** : l'adresse avec laquelle vous ouvrez Matomo, par
+  exemple `https://stats.example.org`, `http://192.168.1.10:8080` ou
+  `https://example.matomo.cloud`. Une adresse copiée depuis le navigateur est
+  comprise ; un sous-dossier (`https://example.org/matomo`) est gardé.
+- **Jeton d'authentification** : le jeton de l'étape 1.
+- **Intervalle de rafraîchissement** : de 30 secondes à 5 minutes (1 minute par
+  défaut).
+- **Pic de visiteurs à partir de** : les visiteurs simultanés qui déclenchent
+  « Pic de visiteurs » (10 par défaut).
+- **Aucune visite depuis (heures)** : les heures sans aucune visite qui
+  déclenchent « Aucune visite depuis un moment » (24 par défaut).
+- **Langue des noms** : langue des noms des fonctionnalités et des résultats
+  de scène (français par défaut).
+
+Enregistrez, puis cliquez sur **Tester la connexion** : le résultat donne la
+version de Matomo, le nombre de sites, les visiteurs uniques du jour et les
+visiteurs en ce moment.
+
+### 3. Ajouter les sites
+
+Ouvrez l'onglet **Découverte** : chaque site y est proposé avec son nom.
+Ajoutez ceux que vous voulez voir dans Gladys. Les déclencheurs de scène et le
+widget fonctionnent pour tous les sites, ajoutés ou non.
+
+## Les appareils
+
+Chaque site devient un appareil avec :
+
+- **Visiteurs en ce moment** : les visiteurs des 30 dernières minutes, comme
+  dans le widget « Visiteurs en temps réel » de Matomo.
+- **Visiteurs uniques aujourd'hui** : visiteurs uniques du jour.
+- **Visites aujourd'hui** : visites du jour.
+- **Pages vues aujourd'hui** : pages vues du jour.
+- **Objectifs atteints aujourd'hui** : conversions de tous les objectifs du
+  site.
+- **Taux de rebond aujourd'hui** : la part des visites qui n'ont vu qu'une
+  page, en pourcentage.
+
+« Aujourd'hui » est le jour du site dans Matomo (son fuseau horaire, dans les
+réglages du site) : les chiffres du jour repartent de 0 à son minuit. Une
+valeur qui ne change pas est renvoyée toutes les 12 heures, pour que Gladys la
+garde récente. Le badge des appareils indique « local » pour votre propre
+serveur, « cloud » pour Matomo Cloud, et « injoignable » quand Matomo ne répond
+pas.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Matomo aujourd'hui** montre cinq tuiles (visiteurs en ce moment,
+visiteurs uniques, visites, pages vues et objectifs du jour), additionnées sur
+les sites affichés, puis une ligne par site avec ses visiteurs uniques du jour
+et ses visiteurs en ce moment, le plus fréquenté d'abord. Dans les réglages du
+widget, choisissez des sites pour n'afficher qu'eux (appareils ajoutés à
+Gladys). Le bouton **Actualiser** relit Matomo.
+
+## Scènes
+
+### Déclencheurs
+
+- **Pic de visiteurs** : les visiteurs en ce moment d'un site atteignent le
+  seuil de la configuration. Une fois par pic, et 30 minutes au moins entre
+  deux annonces pour un site : un pic qui dure encore à la fin de la pause est
+  annoncé à ce moment-là. Variables : nom du site, domaine, visiteurs en ce
+  moment, seuil.
+- **Premier visiteur de la journée** : un site reçoit son premier visiteur du
+  jour. Variables : nom du site, domaine, visiteurs uniques aujourd'hui.
+- **Objectif atteint** : un site enregistre de nouvelles conversions
+  d'objectifs. Variables : nom du site, domaine, nouvelles conversions,
+  conversions aujourd'hui.
+- **Aucune visite depuis un moment** : un site qui avait des visites n'en
+  reçoit plus pendant les heures de la configuration : le code de suivi est
+  peut-être cassé, ou le site en panne. Une fois, jusqu'au retour d'une
+  visite. Variables : nom du site, domaine, heures sans visite.
+
+Chaque déclencheur peut être limité à certains sites (vide : tous). Ce dont
+les déclencheurs se souviennent est gardé dans le volume `/data` : un
+redémarrage de Gladys ou de l'intégration n'annonce pas deux fois un pic, un
+premier visiteur ou une conversion. Rien n'est annoncé à la première lecture
+d'un site : un pic ou un silence déjà en cours est seulement enregistré. Si
+l'intégration était arrêtée, les conversions et le premier visiteur de
+l'intervalle sont annoncés à la première lecture après son redémarrage.
+
+### Actions
+
+- **Lire les chiffres d'un site** : donne le nom (`name`), les visiteurs en ce
+  moment (`active`), les `visitors`, `visits`, `pageviews`, `conversions` et
+  `bounce_rate` du jour, et une phrase toute prête (`sentence`), par exemple
+  « Blog : 15 visite(s) et 41 page(s) vue(s) aujourd'hui, 2 en ce moment, 1
+  objectif(s) atteint(s). ».
+
+### Idées de scènes
+
+- Quand **Objectif atteint** se déclenche pour votre boutique, envoyer un
+  message Telegram « {{website}} : {{conversions}} nouvelle(s) conversion(s),
+  {{total}} aujourd'hui ».
+- Quand **Aucune visite depuis un moment** se déclenche, envoyer une
+  notification « Aucune visite sur {{website}} depuis {{hours}} h : vérifier le
+  code de suivi ».
+- Chaque soir à 21 h, **Lire les chiffres d'un site** et envoyer la phrase par
+  message.
+- Avec la fonctionnalité **Visiteurs en ce moment** en condition de scène,
+  allumer une lampe en vert tant que quelqu'un est sur le site.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« jeton refusé »** : le jeton est faux, supprimé ou expiré : créez-en un
+  nouveau dans **Personnel → Sécurité**.
+- **« aucun Matomo à cette adresse »** : vérifiez l'adresse et le port ; c'est
+  le dossier où se trouve `index.php`.
+- **« l'adresse redirige »** : saisissez directement l'adresse en `https://`.
+- **« certificat refusé »** : le certificat HTTPS est auto-signé ou expiré :
+  utilisez l'adresse `http://` dans votre réseau, ou un certificat reconnu.
+- **« Matomo signale une erreur »** : les logs de l'intégration donnent le
+  message de Matomo (erreur de base de données, extension désactivée…).
+- Un site manque : l'utilisateur du jeton doit y avoir l'accès **Vue**. La
+  liste est relue toutes les 10 minutes, ou avec **Rechercher** dans l'onglet
+  Découverte.
+- Les chiffres du jour avancent par paliers : Matomo les recalcule au plus
+  toutes les 15 minutes par défaut (**Administration → Système → Paramètres
+  généraux → Archiver les rapports au maximum toutes les X secondes**), ou à
+  chaque tâche cron d'archivage si l'archivage par le navigateur est désactivé.
+  « Objectif atteint » les suit. Les visiteurs en ce moment sont toujours en
+  direct.
+- **Objectifs atteints aujourd'hui** reste vide : l'extension Goals est
+  désactivée. **Visiteurs en ce moment** reste vide : l'extension Live, ou le
+  journal des visites, est désactivé.
+- Les logs de l'intégration (**Intégrations → Matomo**) en disent plus ; rien
+  n'y est écrit pendant un cycle de lecture normal.
+
+## Limites
+
+- Lecture seule : l'intégration ne modifie rien dans Matomo.
+- Les chiffres sont ceux de Matomo au moment de la lecture, avec l'intervalle
+  de rafraîchissement comme délai (et l'archivage de Matomo pour les chiffres
+  du jour).
+- Un serveur Matomo par intégration, 200 sites au plus.
+- Les seuils de « Pic de visiteurs » et « Aucune visite depuis un moment »
+  sont les mêmes pour tous les sites ; « Objectif atteint » compte tous les
+  objectifs d'un site ensemble.
+- Matomo 3 et plus ancien ne sont pas pris en charge.
+- Pas encore testée sur Matomo Cloud, et sans lien avec Matomo ni InnoCraft.
