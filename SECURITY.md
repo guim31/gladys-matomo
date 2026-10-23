@@ -30,6 +30,19 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- the **authentication token** (`token_auth`) of a Matomo user, stored by
+  Gladys in the integration configuration (never written to `/data`, never
+  logged, removed from the Matomo error messages); it is only sent to the
+  address configured, in the body of POST requests (never in a URL), and
+  redirects are not followed so it never reaches another host. A token of a
+  user with view access only is recommended;
+- `/data/matomo-state.json`: what the scene triggers remember per website
+  (spike under way, day of the first visitor, conversions of the day, silent
+  or not; no secret);
+- network: HTTP(S) requests to Matomo, nothing else; no port is opened.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and Matomo itself (Matomo Cloud or the self-hosted server).

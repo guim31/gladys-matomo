@@ -1,0 +1,164 @@
+{
+  "_comment": "Real answers of Matomo 5.14.2 (Docker, MariaDB 11), 23/10/2026: one website with 3 visits of 3 pages that reach a goal, one website without visits. Timestamps kept, nothing private. noAccess: a view-only user asking for a website it cannot see.",
+  "version": {
+    "value": "5.14.2"
+  },
+  "sites": [
+    {
+      "idsite": 1,
+      "name": "Test blog",
+      "description": "",
+      "main_url": "https://blog.example.org",
+      "ts_created": "2026-10-22 00:00:00",
+      "ecommerce": 0,
+      "sitesearch": 1,
+      "sitesearch_keyword_parameters": "",
+      "sitesearch_category_parameters": "",
+      "timezone": "Europe/Paris",
+      "currency": "USD",
+      "exclude_unknown_urls": 0,
+      "excluded_ips": "",
+      "excluded_parameters": "",
+      "excluded_user_agents": "",
+      "excluded_referrers": "",
+      "group": "",
+      "type": "website",
+      "keep_url_fragment": 0,
+      "creator_login": "anonymous",
+      "timezone_name": "France",
+      "currency_name": "US Dollar"
+    },
+    {
+      "idsite": 2,
+      "name": "Shop",
+      "description": "",
+      "main_url": "https://shop.example.org",
+      "ts_created": "2026-10-23 18:03:05",
+      "ecommerce": 0,
+      "sitesearch": 1,
+      "sitesearch_keyword_parameters": "",
+      "sitesearch_category_parameters": "",
+      "timezone": "UTC",
+      "currency": "USD",
+      "exclude_unknown_urls": 0,
+      "excluded_ips": "",
+      "excluded_parameters": "",
+      "excluded_user_agents": "",
+      "excluded_referrers": "",
+      "group": "",
+      "type": "website",
+      "keep_url_fragment": 0,
+      "creator_login": "admin",
+      "timezone_name": "UTC",
+      "currency_name": "US Dollar"
+    }
+  ],
+  "bulk": [
+    [
+      {
+        "visits": 3,
+        "actions": 9,
+        "visitors": 3,
+        "visitsConverted": 3
+      }
+    ],
+    {
+      "nb_uniq_visitors": 3,
+      "nb_users": 0,
+      "nb_visits": 3,
+      "nb_actions": 9,
+      "nb_visits_converted": 3,
+      "bounce_count": 0,
+      "sum_visit_length": 13,
+      "max_actions": 3,
+      "bounce_rate": "0%",
+      "nb_actions_per_visit": 3,
+      "avg_time_on_site": 4
+    },
+    {
+      "nb_pageviews": 9,
+      "nb_uniq_pageviews": 9,
+      "nb_downloads": 0,
+      "nb_uniq_downloads": 0,
+      "nb_outlinks": 0,
+      "nb_uniq_outlinks": 0,
+      "nb_searches": 0,
+      "nb_keywords": 0,
+      "hits": 9
+    },
+    {
+      "nb_conversions": 3,
+      "nb_visits_converted": 3,
+      "revenue": 0,
+      "conversion_rate": "100%",
+      "nb_conversions_new_visit": 3,
+      "nb_visits_converted_new_visit": 3,
+      "revenue_new_visit": 0,
+      "conversion_rate_new_visit": "100%",
+      "nb_conversions_returning_visit": 0,
+      "nb_visits_converted_returning_visit": 0,
+      "revenue_returning_visit": 0,
+      "conversion_rate_returning_visit": "0%"
+    },
+    [
+      {
+        "lastActionTimestamp": 1792778592
+      }
+    ],
+    [
+      {
+        "visits": 0,
+        "actions": 0,
+        "visitors": 0,
+        "visitsConverted": 0
+      }
+    ],
+    {
+      "nb_uniq_visitors": 0,
+      "nb_users": 0,
+      "nb_visits": 0,
+      "nb_actions": 0,
+      "nb_visits_converted": 0,
+      "bounce_count": 0,
+      "sum_visit_length": 0,
+      "max_actions": 0,
+      "bounce_rate": "0%",
+      "nb_actions_per_visit": 0,
+      "avg_time_on_site": 0
+    },
+    {
+      "nb_pageviews": 0,
+      "nb_uniq_pageviews": 0,
+      "nb_downloads": 0,
+      "nb_uniq_downloads": 0,
+      "nb_outlinks": 0,
+      "nb_uniq_outlinks": 0,
+      "nb_searches": 0,
+      "nb_keywords": 0,
+      "hits": 0
+    },
+    {
+      "nb_conversions": 0,
+      "nb_visits_converted": 0,
+      "revenue": 0,
+      "conversion_rate": "0%",
+      "nb_conversions_new_visit": 0,
+      "nb_visits_converted_new_visit": 0,
+      "revenue_new_visit": 0,
+      "conversion_rate_new_visit": "0%",
+      "nb_conversions_returning_visit": 0,
+      "nb_visits_converted_returning_visit": 0,
+      "revenue_returning_visit": 0,
+      "conversion_rate_returning_visit": "0%"
+    },
+    []
+  ],
+  "badToken": {
+    "result": "error",
+    "message": "Unable to authenticate with the provided token. It is either invalid or expired."
+  },
+  "noAccess": {
+    "result": "error",
+    "message": "You can't access this resource as it requires 'view' access for the website id = 2."
+  }
+}

@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states, transitions -> scene events, views
+src/devices.js                    one device per website: features, names, values
+src/matomo/client.js              Matomo Reporting API (fetch, POST, bulk requests); errors by kind
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget `matomo_today` (manifest `widgets`)
+src/texts.js                      connection, error, report and action texts (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js, src/problems.js     /data/matomo-state.json; one log line per repeated failure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeMatomo.js (checked against test/fixtures/matomo)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** is in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, widget, manifest texts, and
+  `docs/{en,fr,de,es}.md` with the same sections. `test/i18n.test.js` checks.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +238,41 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Matomo (propre à ce dépôt)
+
+- **API** (vérifiée sur Matomo **5.14.2**, image Docker officielle + MariaDB 11, 23/10/2026) :
+  `index.php?module=API&format=JSON`, **toujours en POST** avec `token_auth` dans le corps (les jetons
+  « secure only » de Matomo 5 refusent le GET ; le jeton n'apparaît jamais dans une URL).
+  `SitesManager.getSitesWithAtLeastViewAccess` (`idsite` nombre, `main_url`, `timezone`),
+  `API.getBulkRequest` avec `urls[i]=method=…&idSite=…` (réponse = tableau dans l'ordre, une erreur
+  par élément possible), `Live.getCounters&lastMinutes=30` (`[{ visits, actions, visitors,
+visitsConverted }]`), `VisitsSummary.get` / `Actions.get` / `Goals.get` en `period=day&date=today`
+  (`nb_uniq_visitors`, `nb_visits`, `bounce_rate` **en chaîne « 45% »**, `nb_pageviews`,
+  `nb_conversions`), `Live.getLastVisitsDetails&filter_limit=1&showColumns=lastActionTimestamp`
+  (`[]` si aucune visite), `API.getMatomoVersion`.
+- **Erreurs** : Matomo répond **HTTP 200** avec `{ result: "error", message }`. Jeton faux ou expiré :
+  « Unable to authenticate with the provided token… » (→ `auth`). Site non visible pour le jeton :
+  « You can't access this resource as it requires 'view' access for the website id = N. » (→ site
+  oublié, liste relue). **Sans jeton**, la liste des sites répond `[]` (accès anonyme), pas une
+  erreur. Un super utilisateur reçoit des zéros pour un `idSite` inexistant. Le message d'erreur est
+  nettoyé du jeton avant d'être journalisé.
+- **« Aujourd'hui » = jour du site dans son fuseau Matomo** (`timezone` : nom IANA, `UTC` ou
+  `UTC+5.5`), pas le `TZ` de Gladys : `dayIn()` dans `src/hub.js` pour les déclencheurs « premier
+  visiteur » et « objectif atteint ».
+- Les chiffres du jour dépendent de l'**archivage** : instantanés avec l'archivage déclenché par le
+  navigateur (défaut), horaires si seul le cron archive. `Live.getCounters` est toujours en direct.
+- **Déclencheurs** : pic = `active ≥ seuil` (30 min) sur front montant, réarmé sous le seuil, 30 min au
+  moins entre deux ; premier visiteur = visiteurs uniques du jour > 0 et jour différent du dernier
+  annoncé ; objectif atteint = `nb_conversions` du jour en hausse (depuis 0 sur un nouveau jour) ;
+  silence = dernière action plus vieille que N h (`Live.getLastVisitsDetails`, demandé toutes les 15
+  min seulement si personne n'était là à la lecture précédente). Premier passage d'un site : on
+  enregistre sans annoncer. État dans `/data/matomo-state.json`, écrit seulement s'il change.
+- Un appel du lot qui échoue seul (extension Goals ou Live désactivée) laisse sa valeur vide et écrit
+  une ligne par site, pas une par cycle.
+- Le taux de rebond est `unknown/unknown` en `percent` (pas de catégorie pourcentage dans le cœur).
+- Badge : `cloud` si l'hôte finit par `.matomo.cloud` ou `.innocraft.cloud`, `local` sinon.
+- Installer Matomo en Docker sans interface : piloter l'assistant web avec `curl` dans le conteneur
+  (`action=databaseSetup`, `tablesCreation`, `setupSuperUser`, `firstWebsiteSetup`, `finished`),
+  puis `UsersManager.createAppSpecificTokenAuth` (login + `passwordConfirmation`) pour un jeton ; les
+  visites se rejouent par `matomo.php?…&cip=…&token_auth=…`.
