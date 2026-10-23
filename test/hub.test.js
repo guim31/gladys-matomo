@@ -173,6 +173,48 @@ test('goal converted: the new conversions, from 0 on a new day, never at the fir
   assert.equal(events(world, TRIGGERS.GOAL).at(-1).data.total, 1);
 });
 
+test('a conversion count going down then up is not announced twice', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const poll = async (conversions) => {
+    world.matomo.get('Blog').conversions = conversions;
+    world.clock.advance(MINUTE);
+    await world.hub.pollNow();
+  };
+  await poll(3);
+  await poll(1); // the report of the day computed again
+  await poll(3);
+  assert.deepEqual(
+    events(world, TRIGGERS.GOAL).map((e) => e.data.conversions),
+    [2],
+  );
+});
+
+test('another Matomo server: what the triggers remember is forgotten', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const other = 'http://192.0.2.20';
+  const request = world.matomo.request;
+  world.hub.request = (url, options) => request(url.replace(other, BASE), options);
+  world.matomo.get('Blog').conversions = 30;
+  await world.fake.configUpdated({ url: other, token: TOKEN, language: 'en' });
+  assert.equal(events(world, TRIGGERS.GOAL).length, 0, 'first sight of the new server');
+});
+
+test('the figures of the day are asked for the day of each website', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const dates = [];
+  const bulk = world.hub.client.bulk.bind(world.hub.client);
+  world.hub.client.bulk = (list) => {
+    dates.push(...list.filter((c) => c.method === 'Goals.get').map((c) => c.date));
+    return bulk(list);
+  };
+  world.clock.time = Date.UTC(2026, 9, 15, 22, 30); // 00:30 in Paris
+  await world.hub.pollNow();
+  assert.deepEqual(dates, ['2026-10-16', '2026-10-15'], 'Blog in Paris, Shop in UTC');
+});
+
 test('first visitor of the day: once a day, at the first visitor, not at the first start', async (t) => {
   const world = await createWorld();
   t.after(() => world.app.stop());
@@ -309,6 +351,20 @@ test('a call failing alone (a plugin disabled): its figure is skipped, one warni
     }
   });
   assert.equal(lines.length, 2, 'one line per website, not one per read');
+  // The last visit is asked one cycle in several: no line when it comes and goes.
+  world.matomo.broken['Live.getLastVisitsDetails'] = 'Visits log is deactivated globally.';
+  const more = await captureLogs(t, 'info', async () => {
+    for (let cycle = 0; cycle < 6; cycle += 1) {
+      world.clock.advance(10 * MINUTE);
+      await world.hub.pollNow();
+    }
+  });
+  assert.equal(more.length, 1, 'Shop: one line for the visits log, none per cycle');
+  assert.deepEqual(
+    world.fake.discoveredDevices.map((d) => d.name),
+    ['Blog', 'Shop'],
+    'not taken for a website gone',
+  );
   assert.equal(world.fake.connectionStatus.connected, true);
   const ids = idsOf(world, 'Blog');
   assert.equal(world.fake.lastState(ids.feature(FEATURE_KEYS.VISITS)), 16);

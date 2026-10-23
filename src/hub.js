@@ -140,6 +140,12 @@ export class MatomoHub {
     this.config = config;
     const signature = JSON.stringify([config.url, config.token]);
     if (signature !== this.signature) {
+      // Another server: its idSites are other websites, forget what the
+      // triggers remember of the previous one.
+      if (this.signature !== null && JSON.parse(this.signature)[0] !== config.url) {
+        this.saved = { sites: {} };
+        this.store.save(this.saved);
+      }
       this.signature = signature;
       this.client =
         missingCredentials(config) === null
@@ -266,7 +272,12 @@ export class MatomoHub {
         )
         .map((site) => site.id),
     );
-    const figures = await client.figures([...this.sites.keys()], lastVisit);
+    // The day each website files its figures under, asked explicitly: Matomo
+    // and the container may not agree on "today" around midnight.
+    const days = new Map(
+      [...this.sites.values()].map((site) => [site.id, dayIn(now, site.timezone)]),
+    );
+    const figures = await client.figures([...this.sites.keys()], lastVisit, days);
     if (client !== this.client) {
       return;
     }
@@ -281,17 +292,20 @@ export class MatomoHub {
         this.websitesAt = 0;
         continue;
       }
-      this.applyFigures(site, figure, now);
+      this.applyFigures(site, figure, now, days.get(id));
     }
   }
 
-  applyFigures(site, figure, now) {
-    const day = dayIn(now, site.timezone);
-    // A call that failed alone (a plugin disabled...): one line, not one per read.
-    if (figure.errors.length > 0) {
-      this.problems.fail(`site:${site.id}`, `${site.name}: ${figure.errors.join('; ')}`);
-    } else {
-      this.problems.recover(`site:${site.id}`, `${site.name}: read again`);
+  applyFigures(site, figure, now, day) {
+    // A call that failed alone (a plugin disabled...): one line when it starts,
+    // one when that same call answers again, whatever the other calls do.
+    for (const [call, message] of Object.entries(figure.calls)) {
+      const key = `site:${site.id}:${call}`;
+      if (message) {
+        this.problems.fail(key, `${site.name}: ${message}`);
+      } else {
+        this.problems.recover(key, `${site.name}: ${call} read again`);
+      }
     }
     const newVisit = site.day === day && figure.today && figure.today.visits > (site.visits ?? 0);
     let { silent, silenceAt } = site;
@@ -400,7 +414,8 @@ export class MatomoHub {
     if (typeof site.conversions === 'number') {
       // A new day starts from 0: its first conversion is new too. The first
       // sight of the website only records the count.
-      const known = saved.goalDay === site.day ? (saved.goals ?? 0) : 0;
+      const sameDay = saved.goalDay === site.day;
+      const known = sameDay ? (saved.goals ?? 0) : 0;
       if (!first && saved.goalDay && site.conversions > known) {
         logger.info(`${site.name}: ${site.conversions - known} new goal conversion(s)`);
         await this.fire(TRIGGERS.GOAL, site, {
@@ -409,7 +424,9 @@ export class MatomoHub {
         });
       }
       saved.goalDay = site.day;
-      saved.goals = site.conversions;
+      // A count going down (a report of the day computed again) is not
+      // remembered: its way back up would announce the same conversions.
+      saved.goals = sameDay ? Math.max(known, site.conversions) : site.conversions;
     }
 
     if (typeof site.silent === 'boolean' && saved.silent !== site.silent) {

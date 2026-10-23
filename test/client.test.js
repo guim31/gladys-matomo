@@ -53,7 +53,7 @@ test('reads the real answers of Matomo 5.14.2', async () => {
   const figures = await matomo.figures(['1', '2'], new Set(['1', '2']));
   assert.deepEqual(figures.get('1'), {
     missing: false,
-    errors: [],
+    calls: { live: null, summary: null, actions: null, goals: null, last: null },
     active: 3,
     today: { visitors: 3, visits: 3, bounceRate: 0 },
     pageviews: 9,
@@ -151,8 +151,36 @@ test('a call failing alone leaves its figure empty', async () => {
   assert.equal(figure.missing, false);
   assert.equal(figure.conversions, null);
   assert.equal(figure.pageviews, 9);
-  assert.deepEqual(figure.errors, ['Matomo: The plugin Goals is not enabled.']);
+  assert.equal(figure.calls.goals, 'Matomo: The plugin Goals is not enabled.');
+  assert.equal(figure.calls.summary, null);
+  assert.equal('last' in figure.calls, false, 'not asked');
   assert.equal(figure.lastActionAt, undefined, 'not asked');
+});
+
+test('the visits log deactivated is not a website gone', async () => {
+  const answers = structuredClone(real.bulk.slice(0, 5));
+  answers[4] = {
+    result: 'error',
+    message:
+      'Visits log is deactivated globally. A user with super user access can enable this feature in the general settings.',
+  };
+  const matomo = client(async () => ({ status: 200, body: JSON.stringify(answers) }));
+  const figure = (await matomo.figures(['1'], new Set(['1']))).get('1');
+  assert.equal(figure.missing, false);
+  assert.equal(figure.lastActionAt, null);
+  assert.equal(figure.visitors ?? figure.today.visitors, 3);
+  assert.equal(
+    errorKind('SQLSTATE[42000]: Syntax error or access violation', { website: true }),
+    ERROR_KINDS.API,
+  );
+});
+
+test('the day of the figures is sent explicitly when given', async () => {
+  const { request, requests } = replay();
+  await client(request).figures(['1', '2'], new Set(['1', '2']), new Map([['1', '2026-10-16']]));
+  const bulk = new URLSearchParams(requests.at(-1).body);
+  assert.equal(bulk.get('urls[1]'), 'method=VisitsSummary.get&idSite=1&period=day&date=2026-10-16');
+  assert.equal(bulk.get('urls[6]'), 'method=VisitsSummary.get&idSite=2&period=day&date=today');
 });
 
 test('a bulk answer of the wrong length is not trusted', async () => {

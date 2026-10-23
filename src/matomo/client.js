@@ -129,7 +129,9 @@ const apiError = (data) =>
 
 // A refused or expired token; anything else about access concerns a website.
 const AUTH_MESSAGE = /authenticate|token_auth|token is|session/i;
-const ACCESS_MESSAGE = /access|idsite|does not exist|website id/i;
+// The one message of a website gone or no longer visible to the token (other
+// "access" messages exist: visits log deactivated, SQL access violation).
+const ACCESS_MESSAGE = /requires 'view' access for the website id|website id = \d+ does not exist/i;
 
 /** The kind of an API error message. */
 export function errorKind(message, { website = false } = {}) {
@@ -270,19 +272,22 @@ export class MatomoClient {
 
   /**
    * The figures of several websites, in bulk requests of SITES_PER_BULK.
-   * `lastVisit` lists the websites whose last action time is wanted.
+   * `lastVisit` lists the websites whose last action time is wanted; `days`
+   * gives the day to read per website (`YYYY-MM-DD` in its time zone, the
+   * one the caller files the figures under), `today` by default.
    * Each figure is null when its call failed; `missing` is set when Matomo
-   * says the website is gone (or no longer visible).
+   * says, for every call, that the website is gone (or no longer visible).
    * @param {string[]} ids
    * @param {Set<string>} [lastVisit]
+   * @param {Map<string, string>} [days]
    */
-  async figures(ids, lastVisit = new Set()) {
+  async figures(ids, lastVisit = new Set(), days = new Map()) {
     const result = new Map();
     for (let at = 0; at < ids.length; at += SITES_PER_BULK) {
       const batch = ids.slice(at, at + SITES_PER_BULK);
       const calls = [];
       for (const id of batch) {
-        const day = { idSite: id, period: 'day', date: 'today' };
+        const day = { idSite: id, period: 'day', date: days.get(id) ?? 'today' };
         calls.push(
           { method: 'Live.getCounters', idSite: id, lastMinutes: String(LIVE_MINUTES) },
           { method: 'VisitsSummary.get', ...day },
@@ -319,9 +324,21 @@ const isObject = (value) => value && typeof value === 'object' && !(value instan
 
 /** The figures of one website from its bulk answers. */
 export function readFigures({ live, summary, actions, goals, last }) {
-  const answers = [live, summary, actions, goals, last];
-  const errors = answers.filter((answer) => answer instanceof MatomoError);
-  const missing = errors.some((error) => error.kind === ERROR_KINDS.NOT_FOUND);
+  const asked = { live, summary, actions, goals };
+  if (last !== undefined) {
+    asked.last = last;
+  }
+  const answers = Object.values(asked);
+  // Per call: the error message, or null when it answered.
+  const calls = Object.fromEntries(
+    Object.entries(asked).map(([key, answer]) => [
+      key,
+      answer instanceof MatomoError ? answer.message : null,
+    ]),
+  );
+  const missing = answers.every(
+    (answer) => answer instanceof MatomoError && answer.kind === ERROR_KINDS.NOT_FOUND,
+  );
   const counters = Array.isArray(live) ? live[0] : null;
   let lastActionAt;
   if (last !== undefined) {
@@ -335,7 +352,7 @@ export function readFigures({ live, summary, actions, goals, last }) {
   }
   return {
     missing,
-    errors: errors.map((error) => error.message),
+    calls,
     active: isObject(counters) ? count(counters.visitors) : null,
     today: isObject(summary)
       ? {
