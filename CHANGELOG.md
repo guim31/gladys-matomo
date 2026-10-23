@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-23
+
 ### Added
 
 - The websites of a Matomo server (self-hosted Matomo 4 or 5, or Matomo Cloud)
@@ -23,4 +25,5 @@ the notes of the version's GitHub Release.
 - "Test the connection" action; texts and documentation in English, French,
   German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-matomo/commits/main
+[Unreleased]: https://github.com/guim31/gladys-matomo/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-matomo/releases/tag/v1.0.0
